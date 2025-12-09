@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Upload</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #111; color: white; }
+        .btn { padding: 20px 40px; font-size: 1.2rem; background: #24b47e; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;}
+        #status { margin-top: 20px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h2>🚀 Secure Transfer</h2>
+    <p>Session ID: <span id="dispSession">...</span></p>
+
+    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+    <button class="btn" id="uploadBtn">📸 Take Photo</button>
+    <div id="status">Waiting...</div>
+
+    <script>
+        // 1. Initialize Supabase
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseKey = 'YOUR_SUPABASE_KEY';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. Get the Session ID from the URL (e.g. mysite.com?session=abc-123)
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session');
+        document.getElementById('dispSession').innerText = sessionId || "Error: No Session";
+
+        // 3. Handle Upload
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        uploadBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = async () => {
+            if (fileInput.files.length === 0) return;
+            const file = fileInput.files[0];
+            const fileName = `${sessionId}.png`; // We rename the file to the Session ID!
+
+            document.getElementById('status').innerText = "Uploading...";
+
+            // Upload to Supabase Storage bucket 'transfers'
+            const { data, error } = await supabase.storage
+                .from('transfers')
+                .upload(fileName, file, { upsert: true });
+
+            if (error) {
+                console.error(error);
+                document.getElementById('status').innerText = "❌ Upload Failed";
+            } else {
+                document.getElementById('status').innerText = "✅ Done! Check your PC.";
+            }
+        };
+    </script>
+</body>
+</html>
