@@ -37,24 +37,43 @@
         uploadBtn.onclick = () => fileInput.click();
 
         fileInput.onchange = async () => {
-            if (fileInput.files.length === 0) return;
-            const file = fileInput.files[0];
-            const fileName = `${sessionId}.png`; // We rename the file to the Session ID!
+    if (fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+    const fileName = `${sessionId}.png`;
 
-            document.getElementById('status').innerText = "Uploading...";
+    const statusEl = document.getElementById('status');
+    statusEl.innerText = "Uploading...";
 
-            // Upload to Supabase Storage bucket 'transfers'
-            const { data, error } = await supabase.storage
-                .from('transfers')
-                .upload(fileName, file, { upsert: true });
+    try {
+        const { data, error } = await supabase.storage
+            .from('transfers')
+            .upload(fileName, file, { upsert: true });
 
-            if (error) {
-                console.error(error);
-                document.getElementById('status').innerText = "❌ Upload Failed";
-            } else {
-                document.getElementById('status').innerText = "✅ Done! Check your PC.";
-            }
-        };
+        if (error) {
+            console.error(error);
+
+            statusEl.style.color = "#ff4d4d";  // red
+            statusEl.innerHTML = `
+                ❌ Upload Faileds<br>
+                <strong>Reason:</strong> ${error.message}<br><br>
+                <pre style="font-size:12px; background:#222; padding:10px; border-radius:8px;">
+${JSON.stringify(error, null, 2)}
+                </pre>
+            `;
+            return;
+        }
+
+        statusEl.style.color = "#24b47e"; // green
+        statusEl.innerText = "✅ Done! Check your PC.";
+    }
+    catch (ex) {
+        statusEl.style.color = "#ff4d4d";
+        statusEl.innerHTML = `
+            ❌ Unexpected Error<br>
+            <strong>${ex.message}</strong>
+        `;
+    }
+};
     </script>
 </body>
 </html>
